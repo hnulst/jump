@@ -2,6 +2,7 @@ import math
 import subprocess
 from multiprocessing import Process, Queue
 
+import cv2
 from matplotlib import pyplot as plt
 
 BASE_PATH = 'C:\\Users\\Jenny\\Desktop\\jump\\'
@@ -10,7 +11,11 @@ PULL = 'adb pull //sdcard//jump.png '
 LONG_CLICK = 'adb shell input swipe 500 500 510 510 '
 ALPHA = 1.37
 
+TM_METHOD = 'cv2.TM_CCOEFF'
+
 q = Queue()
+template = cv2.imread('C:\\Users\\Jenny\\Desktop\\jump\\ren.png', 0)
+w, h = template.shape[::-1]
 
 
 def coor_to_time(coor):
@@ -40,11 +45,23 @@ def onclick(event):
     print('(%.2f, %.2f)' % (x, y))
 
 
+def match(img, template):
+    res = cv2.matchTemplate(img, template, eval(TM_METHOD))
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    top_left = max_loc
+    bottom_right = (top_left[0] + w, top_left[1] + h)
+    cv2.rectangle(img, top_left, bottom_right, 255, 2)
+    x = top_left[0] + w / 2
+    y = bottom_right[1] + h / 9
+    q.put((x, y))
+
+
 def show(idx):
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    img = plt.imread(BASE_PATH + str(idx) + '.png')
-    ax.imshow(img)
+    img = cv2.imread(BASE_PATH + str(idx) + '.png', 0)
+    match(img, template)
+    plt.imshow(img, cmap='gray')
     fig.canvas.mpl_connect('button_press_event', onclick)
     plt.show()
 
