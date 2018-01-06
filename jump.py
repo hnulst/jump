@@ -1,5 +1,6 @@
 import math
 import subprocess
+import time
 from multiprocessing import Process, Queue
 
 import cv2
@@ -13,9 +14,23 @@ ALPHA = 1.37
 
 TM_METHOD = 'cv2.TM_CCOEFF'
 
-q = Queue()
+coor_queue = Queue()
 template = cv2.imread('C:\\Users\\Jenny\\Desktop\\jump\\ren.png', 0)
 w, h = template.shape[::-1]
+
+fig = plt.figure()
+fig.add_subplot(111)
+
+
+def on_click(event):
+    x, y = event.xdata, event.ydata
+    coor_queue.put((x, y))
+    print('to (%.2f, %.2f)' % (x, y))
+    capture()
+    show()
+
+
+fig.canvas.mpl_connect('button_press_event', on_click)
 
 
 def coor_to_time(coor):
@@ -26,23 +41,17 @@ def coor_to_time(coor):
     return (int)(ALPHA * dist)
 
 
-def jump(q):
+def jump(cq):
     idx = 0
     coor = [(0, 0), (1, 1)]
     while True:
         idx = idx % 2
-        coor[idx] = q.get(True)
+        coor[idx] = cq.get(True)
         if idx == 1:
             jump_cmd = LONG_CLICK + str(coor_to_time(coor))
             # print(jump_cmd)
             run_cmd(jump_cmd)
         idx += 1
-
-
-def onclick(event):
-    x, y = event.xdata, event.ydata
-    q.put((x, y))
-    print('(%.2f, %.2f)' % (x, y))
 
 
 def match(img, template):
@@ -54,17 +63,23 @@ def match(img, template):
     x = top_left[0] + w / 2
     y = bottom_right[1] - h / 10
     cv2.circle(img, ((int)(x), (int)(y)), 3, (0, 0, 255), -1)
-    q.put((x, y))
+    print('from (%.2f, %.2f)' % (x, y))
+    coor_queue.put((x, y))
 
 
-def show(idx):
-    fig = plt.figure()
-    fig.add_subplot(111)
-    img = cv2.imread(BASE_PATH + str(idx) + '.png', 0)
+def show():
+    img = cv2.imread(BASE_PATH + '.png', 0)
     match(img, template)
-    plt.imshow(img, cmap='gray'), plt.title(str(idx))
-    fig.canvas.mpl_connect('button_press_event', onclick)
+    plt.imshow(img, cmap='gray')
     plt.show()
+
+
+def capture():
+    time.sleep(3)
+
+    run_cmd(CAP)  # screencap
+    print('capturing ' + '.png\n')
+    run_cmd(PULL + BASE_PATH + '.png')
 
 
 def run_cmd(cmd):
@@ -72,15 +87,8 @@ def run_cmd(cmd):
 
 
 if __name__ == '__main__':
-    idx = 1
-    jump_process = Process(target=jump, args=(q,))
+    jump_process = Process(target=jump, args=(coor_queue,))
     jump_process.start()
     while True:
-        if idx == 1:
-            input()
-        run_cmd(CAP)  # screencap
-        print('capturing ' + str(idx) + '.png\n')
-        run_cmd(PULL + BASE_PATH + str(idx) + '.png')
-        # show it in window
-        show(idx)
-        idx += 1
+        capture()
+        show()
