@@ -52,16 +52,17 @@ def match(img, template):
     bottom_right = (top_left[0] + w, top_left[1] + h)
     cv2.rectangle(img, top_left, bottom_right, 255, 2)
     x = top_left[0] + w / 2
-    y = bottom_right[1] + h / 9
+    y = bottom_right[1] - h / 10
+    cv2.circle(img, ((int)(x), (int)(y)), 3, (0, 0, 255), -1)
     q.put((x, y))
 
 
 def show(idx):
     fig = plt.figure()
-    ax = fig.add_subplot(111)
+    fig.add_subplot(111)
     img = cv2.imread(BASE_PATH + str(idx) + '.png', 0)
     match(img, template)
-    plt.imshow(img, cmap='gray')
+    plt.imshow(img, cmap='gray'), plt.title(str(idx))
     fig.canvas.mpl_connect('button_press_event', onclick)
     plt.show()
 
