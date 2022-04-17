@@ -17,7 +17,7 @@ ALPHA = 1.07
 TM_METHOD = 'cv2.TM_CCOEFF'
 
 coor_queue = Queue()
-template = cv2.imread(filename=os.path.join(BASE_PATH, 'ren.png'), flags=0)
+template = cv2.imread(filename=os.path.join(BASE_PATH, 'ren.png'), flags=cv2.IMREAD_GRAYSCALE)
 w, h = template.shape[::-1]
 
 fig = plt.figure()
@@ -70,9 +70,9 @@ def match(img):
 
 
 def show():
-    img = cv2.imread(filename=os.path.join(BASE_PATH, '.png'), flags=0)
+    img = cv2.imread(filename=os.path.join(BASE_PATH, '.png'), flags=cv2.IMREAD_GRAYSCALE)
     match(img)
-    plt.imshow(img, cmap='gray')
+    plt.imshow(X=img, cmap='gray')
     plt.show()
 
 
